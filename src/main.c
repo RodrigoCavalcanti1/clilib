@@ -1,48 +1,55 @@
+/**
+ * timer.c
+ * Created on Aug, 23th 2023
+ * Author: Tiago Barros
+ * Based on "From C to C++ course - 2002"
+*/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
-#include "screen.h"
-#include "keyboard.h"
 #include "timer.h"
-#include "snake.h"
-#include "score.h"
+#include <sys/time.h>
+#include <stdio.h>
 
-void snakeMenu();  // Declaração explícita da função
+static struct timeval timer, now;
+static int delay = -1;
 
-int main() {
-    screenInit(1);        // bordas ativadas
-    screenHideCursor();
-    keyboardInit();
-    timerInit(150);       // delay da cobra
+void timerInit(int valueMilliSec)
+{
+    delay = valueMilliSec;
+    gettimeofday(&timer, NULL);
+}
 
-    snakeMenu();          // menu inicial
+void timerDestroy()
+{
+    delay = -1;
+}
 
-    snakeInit();
-    scoreInit();
+void timerUpdateTimer(int valueMilliSec)
+{
+    delay = valueMilliSec;
+    gettimeofday(&timer, NULL);
+}
 
-    while (!snakeGameOver()) {
-        if (timerTimeOver()) {
-            snakeUpdate();
-            snakeRender();
-            timerUpdateTimer(150);
-        }
-        if (keyhit()) {
-            char tecla = readch();
-            snakeHandleInput(tecla);
-        }
+int getTimeDiff()
+{
+    gettimeofday(&now, NULL);
+    long diff = (((now.tv_sec - timer.tv_sec) * 1000000) + now.tv_usec - timer.tv_usec)/1000;
+    return (int) diff;
+}
+
+int timerTimeOver()
+{
+    int ret = 0;
+
+    if (getTimeDiff() > delay)
+    {
+        ret = 1;
+        gettimeofday(&timer, NULL);
     }
 
-    screenClear();
-    screenGotoxy(30, 12);
-    printf("Game Over! Pontos: %d\n", scoreGet());
-    scoreSave();
-    scorePrintRanking();
+    return ret;
+}
 
-    screenSetNormal();
-    screenShowCursor();
-    screenDestroy();
-    keyboardDestroy();
-    timerDestroy();
-    return 0;
+void timerPrint()
+{
+    printf("Timer:  %d", getTimeDiff());
 }
