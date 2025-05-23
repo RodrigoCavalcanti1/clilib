@@ -1,89 +1,48 @@
-/**
- * main.h
- * Created on Aug, 23th 2023
- * Author: Tiago Barros
- * Based on "From C to C++ course - 2002"
-*/
 
-#include <string.h>
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 #include "screen.h"
 #include "keyboard.h"
 #include "timer.h"
+#include "snake.h"
+#include "score.h"
 
-int x = 34, y = 12;
-int incX = 1, incY = 1;
+void snakeMenu();  // Declaração explícita da função
 
-void printHello(int nextX, int nextY)
-{
-    screenSetColor(CYAN, DARKGRAY);
-    screenGotoxy(x, y);
-    printf("           ");
-    x = nextX;
-    y = nextY;
-    screenGotoxy(x, y);
-    printf("Hello World");
-}
-
-void printKey(int ch)
-{
-    screenSetColor(YELLOW, DARKGRAY);
-    screenGotoxy(35, 22);
-    printf("Key code :");
-
-    screenGotoxy(34, 23);
-    printf("            ");
-    
-    if (ch == 27) screenGotoxy(36, 23);
-    else screenGotoxy(39, 23);
-
-    printf("%d ", ch);
-    while (keyhit())
-    {
-        printf("%d ", readch());
-    }
-}
-
-int main() 
-{
-    static int ch = 0;
-    static long timer = 0;
-
-    screenInit(1);
+int main() {
+    screenInit(1);        // bordas ativadas
+    screenHideCursor();
     keyboardInit();
-    timerInit(50);
+    timerInit(150);       // delay da cobra
 
-    printHello(x, y);
-    screenUpdate();
+    snakeMenu();          // menu inicial
 
-    while (ch != 10 && timer <= 100) //enter or 5s
-    {
-        // Handle user input
-        if (keyhit()) 
-        {
-            ch = readch();
-            printKey(ch);
-            screenUpdate();
+    snakeInit();
+    scoreInit();
+
+    while (!snakeGameOver()) {
+        if (timerTimeOver()) {
+            snakeUpdate();
+            snakeRender();
+            timerUpdateTimer(150);
         }
-
-        // Update game state (move elements, verify collision, etc)
-        if (timerTimeOver() == 1)
-        {
-            int newX = x + incX;
-            if (newX >= (MAXX -strlen("Hello World") -1) || newX <= MINX+1) incX = -incX;
-            int newY = y + incY;
-            if (newY >= MAXY-1 || newY <= MINY+1) incY = -incY;
-
-            printHello(newX, newY);
-
-            screenUpdate();
-            timer++;
+        if (keyhit()) {
+            char tecla = readch();
+            snakeHandleInput(tecla);
         }
     }
 
-    keyboardDestroy();
-    screenDestroy();
-    timerDestroy();
+    screenClear();
+    screenGotoxy(30, 12);
+    printf("Game Over! Pontos: %d\n", scoreGet());
+    scoreSave();
+    scorePrintRanking();
 
+    screenSetNormal();
+    screenShowCursor();
+    screenDestroy();
+    keyboardDestroy();
+    timerDestroy();
     return 0;
 }
